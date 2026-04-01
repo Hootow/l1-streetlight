@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-// แก้ไข Path จาก @/ เป็นการระบุตำแหน่งตรงๆ เพื่อป้องกัน Build Error บน Vercel
-import { supabase } from "../lib/supabase"; 
+// แก้ไข Path เป็น ./ เพื่อดึงไฟล์จากโฟลเดอร์เดียวกัน ลดปัญหา Build Error บน Vercel
+import { supabase } from "./supabase"; 
 import { 
   Wrench, 
   MapPin, 
@@ -10,11 +10,12 @@ import {
   CheckCircle2, 
   Search,
   Plus,
-  Loader2
+  Loader2,
+  Settings
 } from "lucide-react";
 
 export default function StreetLightDashboard() {
-  // แก้จุดที่ Error: ระบุประเภทเป็น <any[]> เพื่อให้ TypeScript ยอมรับข้อมูลจาก Supabase
+  // TypeScript Fix: ระบุประเภท <any[]> เพื่อให้รองรับข้อมูลจาก Supabase
   const [lights, setLights] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
@@ -26,7 +27,7 @@ export default function StreetLightDashboard() {
   async function fetchLights() {
     try {
       setLoading(true);
-      // ตรวจสอบชื่อ Table "streetlights" ให้ตรงกับใน Supabase ของนายด้วยนะ
+      // ตรวจสอบชื่อ Table ให้ตรงกับใน Supabase ของนาย (ถ้าไม่ใช่ streetlights ให้แก้ตรงนี้)
       const { data, error } = await supabase
         .from("streetlights") 
         .select("*")
@@ -41,7 +42,7 @@ export default function StreetLightDashboard() {
     }
   }
 
-  // ระบบค้นหาโคมไฟ
+  // ระบบค้นหาโคมไฟตามเลขเสาหรือสถานที่
   const filteredLights = lights.filter(light => 
     (light.pole_id?.toLowerCase().includes(searchTerm.toLowerCase())) ||
     (light.location_name?.toLowerCase().includes(searchTerm.toLowerCase()))
@@ -49,7 +50,7 @@ export default function StreetLightDashboard() {
 
   return (
     <div className="min-h-screen bg-slate-50 p-4 md:p-8">
-      {/* Header Section */}
+      {/* ส่วนหัวของระบบ */}
       <div className="max-w-6xl mx-auto mb-8">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
@@ -71,17 +72,17 @@ export default function StreetLightDashboard() {
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
-            <button className="bg-emerald-600 text-white px-4 py-2 rounded-xl text-sm font-medium hover:bg-emerald-700 transition-colors flex items-center gap-2 whitespace-nowrap">
-              <Plus size={18} />
-              เพิ่มรายการ
+            <button className="bg-slate-900 text-white px-4 py-2 rounded-xl text-sm font-medium hover:bg-slate-800 transition-colors flex items-center gap-2">
+              <Settings size={18} />
+              ตั้งค่าระบบ
             </button>
           </div>
         </div>
       </div>
 
-      {/* Stats Cards */}
+      {/* แถบสรุปสถานะ */}
       <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-        <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
+        <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm shadow-emerald-100/50">
           <p className="text-slate-500 text-sm mb-1 font-medium">โคมไฟทั้งหมด</p>
           <p className="text-3xl font-bold text-slate-900">{lights.length} <span className="text-sm font-normal text-slate-400">ต้น</span></p>
         </div>
@@ -99,53 +100,54 @@ export default function StreetLightDashboard() {
         </div>
       </div>
 
-      {/* Main List Area */}
+      {/* ส่วนแสดงรายการโคมไฟ */}
       <div className="max-w-6xl mx-auto">
         {loading ? (
           <div className="flex flex-col items-center justify-center py-20 text-slate-400">
-            <Loader2 className="animate-spin mb-2" size={32} />
-            <p>กำลังดึงข้อมูลจากระบบ...</p>
+            <Loader2 className="animate-spin mb-2 text-emerald-600" size={32} />
+            <p className="font-medium">กำลังเชื่อมต่อฐานข้อมูล...</p>
           </div>
         ) : filteredLights.length === 0 ? (
           <div className="text-center py-20 bg-white rounded-2xl border border-dashed border-slate-200">
-            <p className="text-slate-400">ไม่พบข้อมูลโคมไฟที่ค้นหา</p>
+            <p className="text-slate-400">ไม่พบข้อมูลโคมไฟที่นายกำลังค้นหา</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredLights.map((light) => (
-              <div key={light.id} className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden hover:shadow-md transition-all group">
+              <div key={light.id} className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden hover:shadow-xl transition-all group">
                 <div className="p-5">
                   <div className="flex justify-between items-start mb-4">
-                    <div className="bg-slate-100 px-3 py-1 rounded-lg">
-                      <span className="text-xs font-bold text-slate-600 uppercase">เสาเลขที่: {light.pole_id}</span>
+                    <div className="bg-slate-100 px-3 py-1 rounded-lg border border-slate-200">
+                      <span className="text-xs font-bold text-slate-700 uppercase">POLE ID: {light.pole_id}</span>
                     </div>
                     {light.status === "repaired" ? (
-                      <span className="flex items-center gap-1 text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full">
-                        <CheckCircle2 size={14} /> ใช้งานปกติ
+                      <span className="flex items-center gap-1 text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-100">
+                        <CheckCircle2 size={12} /> ปกติ
                       </span>
                     ) : (
-                      <span className="flex items-center gap-1 text-xs font-bold text-amber-600 bg-amber-50 px-2 py-1 rounded-full animate-pulse">
-                        <AlertCircle size={14} /> แจ้งเสีย
+                      <span className="flex items-center gap-1 text-[10px] font-bold text-amber-600 bg-amber-50 px-2.5 py-1 rounded-full border border-amber-100 animate-pulse">
+                        <AlertCircle size={12} /> รอซ่อม
                       </span>
                     )}
                   </div>
 
                   <h3 className="font-bold text-slate-900 mb-2 flex items-center gap-2 group-hover:text-emerald-600 transition-colors">
                     <MapPin size={16} className="text-slate-400" />
-                    {light.location_name || "ไม่ระบุสถานที่"}
+                    {light.location_name || "ไม่มีข้อมูลตำแหน่ง"}
                   </h3>
                   
-                  <div className="space-y-2 mb-4 p-3 bg-slate-50 rounded-xl">
+                  <div className="space-y-2 mb-4 p-3 bg-slate-50 rounded-xl border border-slate-100">
                     <p className="text-xs text-slate-500">
-                      <span className="font-semibold text-slate-700">อาการเสีย:</span> {light.issue || "รอตรวจสอบ"}
+                      <span className="font-semibold text-slate-700 underline decoration-slate-200">อาการเสีย:</span> {light.issue || "รอลงบันทึก"}
                     </p>
                     <p className="text-xs text-slate-500">
-                      <span className="font-semibold text-slate-700">ช่างที่ดูแล:</span> {light.technician || "ยังไม่มีผู้รับผิดชอบ"}
+                      <span className="font-semibold text-slate-700 underline decoration-slate-200">ช่างที่รับงาน:</span> {light.technician || "ยังไม่มอบหมาย"}
                     </p>
                   </div>
 
-                  <button className="w-full py-2.5 bg-white hover:bg-slate-900 hover:text-white text-slate-600 text-xs font-bold rounded-xl border border-slate-200 transition-all shadow-sm">
-                    ดูรายละเอียดและบันทึกการซ่อม
+                  <button className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl transition-all shadow-sm flex items-center justify-center gap-2">
+                    <Wrench size={14} />
+                    จัดการประวัติการซ่อม
                   </button>
                 </div>
               </div>
